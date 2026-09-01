@@ -80,7 +80,9 @@ ingest → normalize (UFE) → verify (integrity + chain of custody)
 ## Install
 
 ```bash
-pip install -e .          # from the project root
+pip install agentdfir          # from PyPI (CLI command is `agenttrace`)
+# or from source (project root):
+pip install -e .
 # or run without installing:
 python3 -m agenttrace.cli --help
 ```

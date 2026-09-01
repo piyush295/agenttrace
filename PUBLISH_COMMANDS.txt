@@ -1,0 +1,48 @@
+========================================================================
+  PyPI PUBLISH - AgentTrace (package name: agentdfir)
+  Sab commands apne TERMINAL me chalao.
+========================================================================
+
+
+-------------------- STEP 1: (pehle) purana leaked token revoke karo --------------------
+  Browser me kholo:  https://pypi.org/manage/account/token/
+  -> jo token chat me bheja tha use "Remove"/"Revoke" karo
+  -> phir "Add API token" se ek NAYA token banao, copy karo
+     (naya token sirf terminal me paste karna, kahin save/paste mat karna)
+
+
+-------------------- STEP 2: upload command (terminal me chalao) --------------------
+
+cd "/media/hdd/projects/agenttrace"
+/tmp/pub_venv/bin/twine upload dist/*
+
+
+-------------------- STEP 3: jab prompt aaye --------------------
+  Username:  __token__
+  Password:  (yahan apna NAYA PyPI token terminal me paste karo - chat me nahi)
+
+  NOTE: password paste karte waqt kuch dikhega nahi (blank rahega) - ye normal hai,
+        bas paste karke Enter dabao.
+
+
+-------------------- STEP 4: verify (terminal me chalao) --------------------
+
+pip install agentdfir
+agenttrace --version
+
+
+-------------------- HO GAYA --------------------
+  Live yahan dikhega:  https://pypi.org/project/agentdfir/
+  Koi bhi ab chala sakta hai:  pip install agentdfir
+
+
+========================================================================
+  AGAR /tmp/pub_venv na mile (system restart ho gaya ho), to ye chalao:
+    cd "/media/hdd/projects/agenttrace"
+    python3 -m venv .venv
+    . .venv/bin/activate
+    pip install --upgrade build twine
+    rm -rf dist build *.egg-info
+    python -m build
+    twine upload dist/*
+========================================================================
