@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+.venv/
+venv/
+
+# Generated case artifacts / reports (produced by running the tool)
+synthetic_data/
+*.tar
+report.html
+report.json
+report.md
+r.json
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/

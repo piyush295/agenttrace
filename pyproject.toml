@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agenttrace"
+version = "0.1.0"
+description = "Forensic reconstruction for AI agent security incidents (local-first, standards-aligned, defensive DFIR)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "AgentTrace contributors" }]
+keywords = ["forensics", "dfir", "ai-agents", "llm", "incident-response", "opentelemetry"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Information Technology",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3",
+]
+# Intentionally zero runtime dependencies (stdlib only) so it can run inside
+# sensitive/air-gapped forensic environments.
+dependencies = []
+
+[project.urls]
+Homepage = "https://example.invalid/agenttrace"
+
+[project.scripts]
+agenttrace = "agenttrace.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["agenttrace*"]
+exclude = ["tests*"]
