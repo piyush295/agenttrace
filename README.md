@@ -169,6 +169,17 @@ DESIGN.md          # architecture & threat model
 - [SECURITY.md](SECURITY.md) — responsible disclosure and safe evidence handling.
 - [CHANGELOG.md](CHANGELOG.md) — release history.
 
+## Support
+
+AgentTrace is free and open source. If you find it useful and would like to
+support development, donations are welcome — entirely at your own discretion.
+
+- **TRON (TRX / USDT–TRC20):** `TYqSCXX8Vu7MXcTXsPPgiKxb4uRHLKTPcC`
+
+> ⚠️ Send only on the **TRON (TRC-20)** network. Always verify the address
+> character-for-character before sending. Cryptocurrency transactions are
+> irreversible; donate at your own risk. Donations are voluntary and non-refundable.
+
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
