@@ -1,14 +1,41 @@
 # AgentTrace
 
-**Forensic reconstruction for AI agent security incidents.**
+**AI agent forensics & incident response — reconstruct, verify, and report on LLM/agent security incidents.**
+
 Local-first · standards-aligned · zero runtime dependencies · defensive DFIR.
 
-AgentTrace ingests *already-recorded* evidence from AI-agent systems, verifies its
-integrity and chain of custody, **reconstructs the causal attack chain**, detects
-known 2026 attack patterns, and produces a regulator/court-ready report.
+AgentTrace is an open-source **digital forensics and incident response (DFIR)**
+tool for **AI agents and LLM applications**. It ingests *already-recorded* evidence
+(OpenTelemetry GenAI spans, MCP server logs, vector-store retrieval logs, OAuth
+records, egress logs, Halo-record hash-chains), verifies its **integrity and chain
+of custody**, **reconstructs the causal attack chain**, detects known attack
+patterns mapped to **MITRE ATLAS**, and produces a **regulator/court-ready report**
+aligned with **EU AI Act Article 12**.
+
+> Keywords: AI agent forensics · LLM incident response · prompt-injection
+> investigation · agentic AI security · MITRE ATLAS · chain of custody ·
+> OpenTelemetry GenAI · MCP · EU AI Act · DFIR.
+
+### What it does
+
+- 🔌 **Ingests 7 evidence sources** into one normalized schema (OTel GenAI, MCP,
+  vector store, OAuth, egress, Halo-record, generic JSONL).
+- 🔒 **Verifies integrity & chain of custody** — hash chains, gap/witness
+  detection, HMAC-signed manifests, a tamper-evident custody ledger.
+- 🕸️ **Reconstructs the causal attack chain** across fragmented logs (timeline +
+  provenance graph).
+- 🎯 **Detects 6 attack patterns** (prompt injection via retrieval, exfiltration
+  via tool chaining, OAuth/credential theft, sub-agent hijack, memory poisoning,
+  tool-permission escalation) — each mapped to **MITRE ATLAS** and linked to
+  exact evidence.
+- 🧭 **Builds kill-chain narratives + risk scores**.
+- 📄 **Reports** in JSON, Markdown, and self-contained offline **HTML** (with an
+  SVG causal-graph), plus **EU AI Act Article 12** coverage.
+- 📦 **Portable signed case bundles** for air-gapped transfer.
+- 🚫 **No AI/ML in the detection path** — deterministic and fully explainable.
 
 It is the **investigation layer** that sits downstream of recorders (OpenTelemetry
-GenAI, Halo-record, MCP logs). Recording is largely solved in 2026; automated
+GenAI, Halo-record, MCP logs). Recording is largely solved; automated
 *reconstruction* of what actually happened across 6–7 fragmented log sources is
 not. That is the gap AgentTrace fills.
 
