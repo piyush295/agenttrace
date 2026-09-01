@@ -39,11 +39,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/agenttrace"
-Documentation = "https://github.com/your-org/agenttrace#readme"
-Repository = "https://github.com/your-org/agenttrace"
-Issues = "https://github.com/your-org/agenttrace/issues"
-Changelog = "https://github.com/your-org/agenttrace/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/piyush295/agenttrace"
+Documentation = "https://github.com/piyush295/agenttrace#readme"
+Repository = "https://github.com/piyush295/agenttrace"
+Issues = "https://github.com/piyush295/agenttrace/issues"
+Changelog = "https://github.com/piyush295/agenttrace/blob/main/CHANGELOG.md"
 
 [project.scripts]
 agenttrace = "agenttrace.cli:main"
