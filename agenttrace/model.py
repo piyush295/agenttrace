@@ -255,6 +255,23 @@ class EvidenceBundle:
     artifacts: list[EvidenceArtifact] = field(default_factory=list)
     events: list[UnifiedForensicEvent] = field(default_factory=list)
     integrity_findings: list[IntegrityFinding] = field(default_factory=list)
+    # Case / chain-of-custody metadata
+    case_number: Optional[str] = None
+    case_officer: Optional[str] = None
+    acquisition_method: Optional[str] = None
+    # Custody ledger is attached at runtime (agenttrace.custody.CustodyLedger).
+    # Kept as a generic attribute to avoid an import cycle with model.py.
+    custody_ledger: Any = None
+
+    def evidence_digest(self) -> str:
+        """Deterministic digest binding this case to its exact evidence state.
+
+        Hashes the sorted (artifact_id, sha256) pairs so any change to the
+        evidence set is reflected. Used to bind reports/manifests to evidence.
+        """
+        import hashlib as _hl
+        pairs = sorted((a.artifact_id, a.sha256) for a in self.artifacts)
+        return _hl.sha256(repr(pairs).encode("utf-8")).hexdigest()
 
     # -- mutation helpers --------------------------------------------------- #
     def add_artifact(self, artifact: EvidenceArtifact) -> None:
@@ -278,7 +295,13 @@ class EvidenceBundle:
     def to_dict(self) -> dict[str, Any]:
         return {
             "case_id": self.case_id,
+            "case_number": self.case_number,
+            "case_officer": self.case_officer,
+            "acquisition_method": self.acquisition_method,
             "created_at": to_rfc3339(self.created_at),
+            "evidence_digest": self.evidence_digest(),
+            "custody_ledger": (self.custody_ledger.to_dict()
+                               if self.custody_ledger is not None else None),
             "artifacts": [a.to_dict() for a in self.artifacts],
             "events": [e.to_dict() for e in self.sorted_events()],
             "integrity_findings": [f.to_dict() for f in self.integrity_findings],

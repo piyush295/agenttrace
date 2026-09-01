@@ -47,6 +47,20 @@ def export_case(out_path: str,
     members: dict[str, bytes] = {}
     members["case/manifest.json"] = json.dumps(manifest, indent=2,
                                                default=str).encode()
+
+    # Chain of custody: record the export, then embed the ledger in the bundle.
+    ledger = getattr(bundle, "custody_ledger", None)
+    if ledger is not None:
+        from .custody import CustodyAction
+        ledger.record(
+            action=CustodyAction.EXPORT,
+            custodian=bundle.case_officer,
+            evidence_ids=[a.artifact_id for a in bundle.artifacts],
+            evidence_hashes=[a.sha256 for a in bundle.artifacts],
+            note=f"Exported portable case bundle to {os.path.basename(out_path)}.",
+        )
+        members["case/custody.json"] = ledger.to_json().encode()
+
     members["case/bundle.json"] = bundle.to_json().encode()
     if report is not None:
         members["case/report.json"] = json.dumps(report, indent=2,
@@ -146,7 +160,46 @@ def verify_case(tar_path: str,
                          if signing_key is None else result["signature_ok"] is True))
     result["case_id"] = seal.get("case_id")
     result["member_count"] = len(seal.get("members", {}))
+
+    # 4. verify embedded custody ledger integrity (if present)
+    if "case/custody.json" in contents:
+        from .custody import CustodyLedger
+        try:
+            led = CustodyLedger.from_dict(json.loads(contents["case/custody.json"]))
+            cust = led.verify()
+            result["custody_ok"] = cust["ok"]
+            result["custody_events"] = cust["event_count"]
+            if not cust["ok"]:
+                result["ok"] = False
+                result["issues"].extend(f"custody: {i}" for i in cust["issues"])
+        except Exception as exc:  # malformed ledger
+            result["custody_ok"] = False
+            result["ok"] = False
+            result["issues"].append(f"custody ledger unreadable: {exc}")
+    else:
+        result["custody_ok"] = None
     return result
+
+
+def record_transfer(bundle,
+                    to_custodian: str,
+                    from_custodian: Optional[str] = None,
+                    note: Optional[str] = None) -> Any:
+    """Record a custody TRANSFER (handoff) event on a bundle's ledger.
+
+    Use before moving evidence/bundle to another custodian or machine.
+    """
+    ledger = getattr(bundle, "custody_ledger", None)
+    if ledger is None:
+        raise ValueError("bundle has no custody ledger to record a transfer")
+    from .custody import CustodyAction
+    return ledger.record(
+        action=CustodyAction.TRANSFER,
+        custodian=from_custodian or bundle.case_officer,
+        evidence_ids=[a.artifact_id for a in bundle.artifacts],
+        evidence_hashes=[a.sha256 for a in bundle.artifacts],
+        note=(note or f"Custody transferred to {to_custodian}."),
+    )
 
 
 def extract_case(tar_path: str, dest_dir: str) -> str:

@@ -351,5 +351,89 @@ class TestPortableBundle(BaseData):
         self.assertFalse(res["member_integrity"])
 
 
+class TestChainOfCustody(BaseData):
+    def _custody_bundle(self, *keys, officer="Det. A. Kumar", case_no="CASE-2026-001"):
+        from agenttrace import new_case
+        b = new_case("coc-test", case_number=case_no, case_officer=officer)
+        for k in keys:
+            c = detect_collector(self.paths[k])
+            c.ingest(self.paths[k], b)
+        return b
+
+    def test_acquire_events_recorded_per_artifact(self):
+        b = self._custody_bundle("otel", "halo", "oauth")
+        led = b.custody_ledger
+        acquires = [e for e in led.events if e.action == "acquire"]
+        self.assertEqual(len(acquires), 3)
+        # each acquire carries the artifact hash
+        for e in acquires:
+            self.assertTrue(e.evidence_hashes)
+            self.assertEqual(e.custodian, "Det. A. Kumar")
+            self.assertEqual(e.case_number, "CASE-2026-001")
+
+    def test_ledger_hash_chain_intact(self):
+        b = self._custody_bundle("otel", "halo")
+        v = b.custody_ledger.verify()
+        self.assertTrue(v["ok"], v["issues"])
+
+    def test_ledger_tamper_detected(self):
+        b = self._custody_bundle("otel", "halo")
+        # tamper with a recorded event's note without recomputing hash
+        b.custody_ledger.events[0].note = "ALTERED"
+        v = b.custody_ledger.verify()
+        self.assertFalse(v["ok"])
+        self.assertTrue(any("hash mismatch" in i for i in v["issues"]))
+
+    def test_full_pipeline_custody_continuity(self):
+        b = self._custody_bundle("otel", "oauth", "egress")
+        manifest = verify_bundle(b, signing_key=b"k")   # -> VERIFY event
+        # manifest captures the custody head AT VERIFY TIME (the VERIFY event)
+        verify_event = [e for e in b.custody_ledger.events if e.action == "verify"][-1]
+        self.assertEqual(manifest["custody_head_hash"], verify_event.hash)
+
+        recon = reconstruct(b)
+        findings = detect_all(recon)
+        report = build_report(b, recon, findings, manifest)  # -> REPORT event
+        actions = [e.action for e in b.custody_ledger.events]
+        # acquisitions + verify + report all present, in order
+        self.assertIn("acquire", actions)
+        self.assertIn("verify", actions)
+        self.assertIn("report", actions)
+        self.assertLess(actions.index("verify"), actions.index("report"))
+        # report is bound to the evidence digest
+        self.assertEqual(report["evidence_digest"], b.evidence_digest())
+        # manifest carries the same evidence digest
+        self.assertEqual(manifest["evidence_digest"], b.evidence_digest())
+        # report embeds the full ledger (now including the report event)
+        self.assertIsNotNone(report["custody_ledger"])
+        self.assertGreaterEqual(report["executive_summary"]["custody_events"], 4)
+
+    def test_export_records_export_and_bundle_verifies_ledger(self):
+        from agenttrace.bundle import export_case, verify_case, record_transfer
+        b = self._custody_bundle("otel", "halo")
+        manifest = verify_bundle(b, signing_key=b"k")
+        recon = reconstruct(b)
+        report = build_report(b, recon, detect_all(recon), manifest)
+
+        # record a custody transfer before export
+        record_transfer(b, to_custodian="Lab-2 Custodian",
+                        from_custodian="Det. A. Kumar")
+
+        tmp = tempfile.mkdtemp()
+        tar = os.path.join(tmp, "case.tar")
+        export_case(tar, b, manifest, report, signing_key=b"k")
+
+        # bundle verification now also checks the embedded custody ledger
+        res = verify_case(tar, signing_key=b"k")
+        self.assertTrue(res["ok"], res["issues"])
+        self.assertIs(res["custody_ok"], True)
+        self.assertGreater(res["custody_events"], 0)
+
+        # the ledger contains transfer + export events
+        actions = [e.action for e in b.custody_ledger.events]
+        self.assertIn("transfer", actions)
+        self.assertIn("export", actions)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

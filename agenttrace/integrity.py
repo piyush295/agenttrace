@@ -247,9 +247,16 @@ def build_manifest(bundle: EvidenceBundle,
     deployment can swap in asymmetric signing.)
     """
     artifacts = [a.to_dict() for a in bundle.artifacts]
+    ledger = getattr(bundle, "custody_ledger", None)
     manifest_core = {
         "case_id": bundle.case_id,
+        "case_number": bundle.case_number,
+        "case_officer": bundle.case_officer,
         "created_at": to_rfc3339(bundle.created_at),
+        "evidence_digest": bundle.evidence_digest(),
+        "custody_head_hash": (ledger.events[-1].hash
+                              if ledger and ledger.events else "GENESIS"),
+        "custody_event_count": len(ledger.events) if ledger else 0,
         "artifact_count": len(artifacts),
         "event_count": len(bundle.events),
         "artifacts": sorted(artifacts, key=lambda a: a["artifact_id"]),
@@ -298,5 +305,17 @@ def verify_bundle(bundle: EvidenceBundle,
 
     for f in findings:
         bundle.add_integrity_finding(f)
+
+    # Chain of custody: record that evidence integrity was verified.
+    if getattr(bundle, "custody_ledger", None) is not None:
+        from .custody import CustodyAction
+        bundle.custody_ledger.record(
+            action=CustodyAction.VERIFY,
+            custodian=bundle.case_officer,
+            evidence_ids=[a.artifact_id for a in bundle.artifacts],
+            evidence_hashes=[a.sha256 for a in bundle.artifacts],
+            note=(f"Integrity verified: {len(findings)} finding(s), "
+                  f"{sum(1 for x in findings if not x.ok)} issue(s)."),
+        )
 
     return build_manifest(bundle, signing_key)

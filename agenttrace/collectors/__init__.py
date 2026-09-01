@@ -77,6 +77,18 @@ class Collector(ABC):
         bundle.add_artifact(artifact)
         events = list(self.parse(path, raw, artifact_id))
         bundle.add_events(events)
+
+        # Chain of custody: record the acquisition of this artifact.
+        if getattr(bundle, "custody_ledger", None) is not None:
+            from ..custody import CustodyAction
+            bundle.custody_ledger.record(
+                action=CustodyAction.ACQUIRE,
+                custodian=bundle.case_officer,
+                evidence_ids=[artifact_id],
+                evidence_hashes=[digest],
+                note=(f"Acquired {os.path.basename(path)} via {self.name} "
+                      f"collector ({len(events)} events, {len(raw)} bytes)."),
+            )
         return len(events)
 
 

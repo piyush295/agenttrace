@@ -28,8 +28,11 @@ from .report import build_report, report_json, report_markdown
 
 
 def _ingest_paths(paths: list[str], case_id: str,
-                  force_collector: Optional[str] = None) -> EvidenceBundle:
-    bundle = EvidenceBundle(case_id=case_id)
+                  force_collector: Optional[str] = None,
+                  case_number: Optional[str] = None,
+                  case_officer: Optional[str] = None) -> EvidenceBundle:
+    from . import new_case
+    bundle = new_case(case_id, case_number=case_number, case_officer=case_officer)
     for path in paths:
         if not os.path.isfile(path):
             print(f"warning: skipping non-file {path}", file=sys.stderr)
@@ -48,18 +51,28 @@ def _ingest_paths(paths: list[str], case_id: str,
 def _add_common(sp: argparse.ArgumentParser) -> None:
     sp.add_argument("paths", nargs="+", help="evidence files to ingest")
     sp.add_argument("--case-id", default="case-001")
+    sp.add_argument("--case-number", default=None,
+                    help="official case number for chain of custody")
+    sp.add_argument("--case-officer", default=None,
+                    help="name of the case officer/custodian performing the work")
     sp.add_argument("--collector", default=None,
                     help=f"force a collector: {[c.name for c in all_collectors()]}")
 
 
+def _bundle_from_args(args) -> EvidenceBundle:
+    return _ingest_paths(args.paths, args.case_id, args.collector,
+                         getattr(args, "case_number", None),
+                         getattr(args, "case_officer", None))
+
+
 def cmd_ingest(args) -> int:
-    bundle = _ingest_paths(args.paths, args.case_id, args.collector)
+    bundle = _bundle_from_args(args)
     print(bundle.to_json())
     return 0
 
 
 def cmd_verify(args) -> int:
-    bundle = _ingest_paths(args.paths, args.case_id, args.collector)
+    bundle = _bundle_from_args(args)
     key = args.signing_key.encode() if args.signing_key else None
     manifest = verify_bundle(bundle, signing_key=key)
     print(json.dumps({
@@ -70,14 +83,14 @@ def cmd_verify(args) -> int:
 
 
 def cmd_reconstruct(args) -> int:
-    bundle = _ingest_paths(args.paths, args.case_id, args.collector)
+    bundle = _bundle_from_args(args)
     recon = reconstruct(bundle)
     print(json.dumps(recon.to_dict(), indent=2, default=str))
     return 0
 
 
 def cmd_detect(args) -> int:
-    bundle = _ingest_paths(args.paths, args.case_id, args.collector)
+    bundle = _bundle_from_args(args)
     recon = reconstruct(bundle)
     findings = detect_all(recon)
     print(json.dumps([f.to_dict() for f in findings], indent=2))
@@ -85,7 +98,7 @@ def cmd_detect(args) -> int:
 
 
 def cmd_report(args) -> int:
-    bundle = _ingest_paths(args.paths, args.case_id, args.collector)
+    bundle = _bundle_from_args(args)
     key = args.signing_key.encode() if args.signing_key else None
     manifest = verify_bundle(bundle, signing_key=key)
     recon = reconstruct(bundle)
@@ -114,7 +127,7 @@ def cmd_report(args) -> int:
 def cmd_export(args) -> int:
     """Build a full case and export a portable signed .tar bundle."""
     from .bundle import export_case
-    bundle = _ingest_paths(args.paths, args.case_id, args.collector)
+    bundle = _bundle_from_args(args)
     key = args.signing_key.encode() if args.signing_key else None
     manifest = verify_bundle(bundle, signing_key=key)
     recon = reconstruct(bundle)
@@ -136,6 +149,34 @@ def cmd_verify_bundle(args) -> int:
     result = verify_case(args.tar, signing_key=key)
     print(json.dumps(result, indent=2))
     return 0 if result["ok"] else 2
+
+
+def cmd_custody(args) -> int:
+    """Print + verify the chain-of-custody ledger embedded in a .tar bundle."""
+    import tarfile
+    from .custody import CustodyLedger
+    with tarfile.open(args.tar, "r") as tar:
+        try:
+            f = tar.extractfile("case/custody.json")
+            data = json.loads(f.read()) if f else None
+        except KeyError:
+            data = None
+    if not data:
+        print(json.dumps({"error": "no custody ledger found in bundle"}, indent=2))
+        return 2
+    ledger = CustodyLedger.from_dict(data)
+    verification = ledger.verify()
+    print(json.dumps({
+        "case_number": ledger.case_number,
+        "verification": verification,
+        "events": [
+            {"seq": e.seq, "time": e.timestamp, "action": e.action,
+             "custodian": e.custodian, "tool_version": e.tool_version,
+             "evidence": len(e.evidence_ids), "note": e.note}
+            for e in ledger.events
+        ],
+    }, indent=2))
+    return 0 if verification["ok"] else 2
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -180,6 +221,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("tar", help="path to the .tar case bundle")
     sp.add_argument("--signing-key", default=None)
     sp.set_defaults(func=cmd_verify_bundle)
+
+    sp = sub.add_parser("custody",
+                        help="print + verify the chain-of-custody ledger of a bundle")
+    sp.add_argument("tar", help="path to the .tar case bundle")
+    sp.set_defaults(func=cmd_custody)
 
     return p
 

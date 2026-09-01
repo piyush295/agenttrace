@@ -89,11 +89,28 @@ def build_report(bundle: EvidenceBundle,
     narratives = build_narratives(recon, findings)
     risk = score_case(recon, findings)
 
+    # Chain of custody: record report generation, bound to evidence digest.
+    ledger = getattr(bundle, "custody_ledger", None)
+    if ledger is not None:
+        from .custody import CustodyAction
+        ledger.record(
+            action=CustodyAction.REPORT,
+            custodian=bundle.case_officer,
+            evidence_ids=[a.artifact_id for a in bundle.artifacts],
+            evidence_hashes=[a.sha256 for a in bundle.artifacts],
+            note=(f"Report '{case_title}' generated; {len(findings)} detection(s); "
+                  f"bound to evidence_digest={bundle.evidence_digest()[:16]}…"),
+        )
+
     return {
         "report_type": "agenttrace_incident_report",
         "generated_at": to_rfc3339(datetime.now(timezone.utc)),
         "case_id": bundle.case_id,
+        "case_number": bundle.case_number,
+        "case_officer": bundle.case_officer,
         "case_title": case_title,
+        "evidence_digest": bundle.evidence_digest(),
+        "custody_ledger": (ledger.to_dict() if ledger is not None else None),
         "executive_summary": {
             "highest_severity": top_sev.value,
             "overall_risk_score": risk["overall_score"],
@@ -103,6 +120,7 @@ def build_report(bundle: EvidenceBundle,
             "events_examined": len(bundle.events),
             "integrity_issues": len(integrity_failed),
             "sessions_reconstructed": len(recon.timelines),
+            "custody_events": len(ledger.events) if ledger else 0,
         },
         "risk": risk,
         "attack_narratives": [n.to_dict() for n in narratives],
@@ -238,6 +256,25 @@ def report_markdown(report: dict[str, Any], bundle: EvidenceBundle) -> str:
          for a in report["chain_of_custody"]["artifacts"]],
         ["Artifact", "Source", "SHA-256", "Bytes", "Collected by"]))
     lines.append("")
+
+    # Chain-of-custody ledger
+    ledger = report.get("custody_ledger")
+    if ledger and ledger.get("events"):
+        lines.append("### Chain-of-custody ledger")
+        lines.append("")
+        lines.append(f"- **Case number:** {report.get('case_number') or '—'}")
+        lines.append(f"- **Case officer:** {report.get('case_officer') or '—'}")
+        lines.append(f"- **Evidence digest:** `{report.get('evidence_digest')}`")
+        lines.append(f"- **Ledger head hash:** `{ledger.get('head_hash')}`")
+        lines.append(f"- **Custody events:** {ledger.get('event_count')}")
+        lines.append("")
+        rows = [[str(e["seq"]), e["timestamp"], e["action"].upper(),
+                 e["custodian"], e.get("tool_version", ""),
+                 (e.get("note") or "")[:60]]
+                for e in ledger["events"]]
+        lines.append(_md_table(rows,
+            ["#", "Time", "Action", "Custodian", "Tool ver", "Note"]))
+        lines.append("")
 
     # EU AI Act Article 12
     lines.append("## EU AI Act Article 12 (record-keeping) coverage")
