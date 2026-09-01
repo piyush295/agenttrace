@@ -1,0 +1,11 @@
+# GitHub funding configuration.
+# The "Sponsor" button appears on the repo once GitHub Sponsors is enabled
+# for your account (https://github.com/sponsors) and/or a custom link is set.
+#
+# To enable the GitHub Sponsors button, uncomment and set your username after
+# you have joined the GitHub Sponsors program:
+# github: [piyush295]
+
+# Custom funding links (shown as "Sponsor" options).
+custom:
+  - "https://github.com/piyush295/agenttrace#support"
