@@ -10,19 +10,40 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [{ name = "AgentTrace contributors" }]
-keywords = ["forensics", "dfir", "ai-agents", "llm", "incident-response", "opentelemetry"]
+keywords = [
+    "forensics", "dfir", "incident-response", "ai-agents", "llm",
+    "opentelemetry", "mitre-atlas", "chain-of-custody", "security",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Information Technology",
+    "Intended Audience :: Legal Industry",
     "Topic :: Security",
+    "Topic :: System :: Monitoring",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 # Intentionally zero runtime dependencies (stdlib only) so it can run inside
 # sensitive/air-gapped forensic environments.
 dependencies = []
 
+[project.optional-dependencies]
+# Development tooling only — never required at runtime.
+dev = [
+    "build>=1.0",
+]
+
 [project.urls]
-Homepage = "https://example.invalid/agenttrace"
+Homepage = "https://github.com/your-org/agenttrace"
+Documentation = "https://github.com/your-org/agenttrace#readme"
+Repository = "https://github.com/your-org/agenttrace"
+Issues = "https://github.com/your-org/agenttrace/issues"
+Changelog = "https://github.com/your-org/agenttrace/blob/main/CHANGELOG.md"
 
 [project.scripts]
 agenttrace = "agenttrace.cli:main"

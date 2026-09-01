@@ -123,16 +123,25 @@ All tests use synthetic data only; no real systems or data are involved.
 ```
 agenttrace/
   model.py         # UFE schema, evidence bundle, redaction
-  collectors/      # pluggable ingestion (otel/halo/jsonl)
+  custody.py       # tamper-evident chain-of-custody ledger
+  collectors/      # pluggable ingestion (otel/halo/mcp/vector/oauth/egress/jsonl)
   integrity.py     # hash-chain verify, gap detection, signed manifest
   correlate.py     # timeline + causal graph
-  detect.py        # attack-pattern detectors
-  report.py        # JSON + Markdown reporting
+  detect.py        # attack-pattern detectors + MITRE ATLAS mapping
+  analyze.py       # kill-chain narratives + risk scoring
+  bundle.py        # portable signed .tar case bundles
+  report.py        # JSON / Markdown / HTML reporting
   cli.py           # command-line interface
 tests/             # synthetic dataset generator + test suite
 DESIGN.md          # architecture & threat model
 ```
 
+## Contributing & security
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, adding collectors/detectors, style.
+- [SECURITY.md](SECURITY.md) — responsible disclosure and safe evidence handling.
+- [CHANGELOG.md](CHANGELOG.md) — release history.
+
 ## License
 
-Apache-2.0.
+Apache-2.0. See [LICENSE](LICENSE).
