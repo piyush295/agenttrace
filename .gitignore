@@ -28,3 +28,6 @@ apt-repo/
 *.deb
 *.buildinfo
 *.changes
+*.asc
+*.gpg
+apt-repo/

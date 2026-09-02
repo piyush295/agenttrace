@@ -82,9 +82,56 @@ sudo apt install agentdfir
 agenttrace --version
 ```
 
-For a **hosted** apt repo, upload the same `apt-repo/` directory to any static
-host (e.g. GitHub Pages) and replace the `file://` path with the URL. For anything
-public, sign the `Release` with GPG and drop `[trusted=yes]`.
+> `[trusted=yes]` disables signature checking — **only acceptable for a purely
+> local file:// repo on your own machine.** For anything hosted/shared, use the
+> **GPG-signed repo** below instead (so only you can publish valid updates).
+
+## 🔐 GPG-signed apt repository (recommended for hosting)
+
+A signed repo guarantees that **only the holder of your private GPG key** can
+publish a valid update — no one else can impersonate you or inject a malicious
+`.deb`, because apt verifies the signature against your public key.
+
+### Maintainer steps (you)
+
+1. Create your own GPG key **once** (keep the private key safe — only you have it):
+   ```bash
+   gpg --quick-generate-key "Your Name <you@example.com>" ed25519 sign 0
+   ```
+2. Build + sign the repo with the included script (pass your key id/email):
+   ```bash
+   scripts/build-apt-repo.sh you@example.com apt-repo
+   ```
+   This produces in `apt-repo/`: the `.deb`, `Packages(.gz)`, `Release`,
+   `Release.gpg`, `InRelease`, and `agenttrace-archive-keyring.asc` (your public key).
+3. Host the `apt-repo/` directory on any static host (e.g. GitHub Pages), and
+   publish `agenttrace-archive-keyring.asc` so users can fetch your public key.
+
+### User steps (anyone installing)
+
+```bash
+# 1. add your public key to apt's keyring dir
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://YOUR_HOST/agenttrace-archive-keyring.asc \
+    | sudo gpg --dearmor -o /etc/apt/keyrings/agenttrace.gpg
+
+# 2. add the repo, pinned to that key (no trusted=yes!)
+echo "deb [signed-by=/etc/apt/keyrings/agenttrace.gpg] https://YOUR_HOST ./" \
+    | sudo tee /etc/apt/sources.list.d/agenttrace.list
+
+# 3. install
+sudo apt update
+sudo apt install agentdfir
+agenttrace --version
+```
+
+If anyone tampers with the `.deb` or metadata, or an attacker who lacks your
+private key tries to publish an update, `apt update` fails signature verification
+and refuses to install — exactly the protection you want.
+
+> The signing flow in `scripts/build-apt-repo.sh` was validated end-to-end
+> (Release.gpg + InRelease produced, `gpg --verify` → "Good signature"). Use your
+> **own** key for real releases; never commit a private key to the repo.
 
 ---
 
