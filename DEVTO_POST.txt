@@ -1,0 +1,96 @@
+========================================================================
+  DEV.TO POST - kaise karein
+   1. dev.to -> "Create Post"
+   2. Top-right pe "..." -> "Switch to Markdown editor" (agar zaroorat ho)
+   3. Niche "COPY YE" ke andar ka POORA content copy karke paste karo
+      (front matter --- --- samet; dev.to title/tags/canonical wahin se le lega)
+   4. "Publish" dabao
+  NOTE: canonical_url Medium ka rakha hai -> Google duplicate content
+        penalty nahi dega, credit Medium ko jaayega. Chaho to hata bhi sakte ho.
+========================================================================
+
+============================ COPY YE ============================
+---
+title: "When Your AI Agent Gets Breached, Can You Prove What It Did?"
+published: true
+tags: aisecurity, dfir, security, opensource
+canonical_url: https://cyberforenx.medium.com/when-your-ai-agent-gets-breached-can-you-prove-what-it-did-c196045f5de1
+---
+
+*Introducing AgentTrace — an open-source, offline forensic tool for reconstructing AI-agent security incidents.*
+
+AI agents are no longer demos. LLMs wired to tools, memory, retrieval, and other agents are running in production — reading data, calling APIs, moving money, touching customer records. And like everything else that touches production, they get caught up in security incidents.
+
+But investigating an AI-agent incident is not like traditional digital forensics. I kept running into the same wall, so I built a tool for it.
+
+## Why AI-agent forensics is genuinely different
+
+Three things break the usual DFIR playbook.
+
+**1. The attack vector is natural language.** When an attacker plants a malicious instruction in a document an agent will retrieve, that instruction looks identical to a legitimate query in every log most teams collect. There is no binary payload, no CVE signature, no network packet that lights up. The exploit is a sentence.
+
+**2. The anomaly is the sequence, not any single event.** Every individual tool call the agent makes is authorized and looks normal. "Read a file." "Call an API." "Make an HTTP request." Nothing is wrong on its own. The attack is the *order* — retrieve poisoned content, then access a secret, then send data out. You cannot see it unless you have the whole chain.
+
+**3. The evidence is scattered and short-lived.** The pieces live in six or seven different systems: LLM invocation logs, tool execution traces, MCP server logs, vector-store retrieval logs, OAuth records, egress logs. Different teams own each one. Different retention windows delete each one. One documented 2026 incident produced roughly 17,600 agent actions in five days; the team's own postmortem called reconstructing it by hand "impractical."
+
+The key insight: the industry has mostly solved *recording* agent activity (OpenTelemetry's GenAI conventions, MCP logging, tamper-evident audit logs). What nobody had was an automated way to *reconstruct* what actually happened from that recorded evidence. That gap is what AgentTrace fills.
+
+## What AgentTrace does
+
+AgentTrace is the investigation layer that sits downstream of the recorders. Point it at your evidence, and it:
+
+- **Ingests 7 evidence sources** into one normalized schema.
+- **Verifies integrity + chain of custody** — hash-chain verification, gap and witness-anchor detection, HMAC-signed manifests, and a tamper-evident custody ledger.
+- **Reconstructs the causal attack chain** across fragmented logs (timeline + provenance-style causal graph).
+- **Detects 6 attack patterns**, each mapped to a **MITRE ATLAS** technique and linked to the exact evidence: prompt injection via retrieval, exfiltration via tool chaining, OAuth/credential-theft chains, sub-agent hijack, memory poisoning, tool-permission escalation.
+- **Builds kill-chain narratives and a 0–100 risk score.**
+- **Produces reports** in JSON, Markdown, and self-contained offline HTML (with an SVG causal graph), including an **EU AI Act Article 12** coverage section.
+- **Exports portable, signed case bundles** for air-gapped transfer.
+
+## Two design choices I won't compromise on
+
+**No AI/ML in the detection path.** Every finding is deterministic and traces back to concrete evidence. A forensic tool has to be explainable — a model that says "I think this is an attack" does not survive a review, an audit, or a courtroom.
+
+**Local-first, zero dependencies.** It runs fully offline on the Python standard library alone. No cloud, no account, no API key.
+
+## What it looks like in practice
+
+```bash
+pip install agentdfir
+
+# What happened? Any known attack patterns?
+agenttrace detect logs/*.json logs/*.jsonl
+
+# Is the evidence trustworthy — altered or missing?
+agenttrace verify logs/*.jsonl --signing-key "case-key" \
+  --case-number "IR-2026-0042" --case-officer "A. Analyst"
+
+# Produce a report for management / legal / a regulator
+agenttrace report logs/*.json logs/*.jsonl --html-out report.html
+```
+
+On a synthetic multi-source incident, `detect` surfaces things like:
+
+```
+[CRITICAL] exfiltration_via_tool_chaining — 25 calls to 'crm_export' in 48s,
+           monotonically increasing offsets  (MITRE ATLAS AML.T0057)
+[CRITICAL] oauth_credential_theft_chain    — credential access -> rapid egress
+[HIGH]     prompt_injection_via_retrieval  — poisoned chunk -> new sensitive tool
+```
+
+Each finding links to the exact events behind it, and the HTML report renders the whole story as a causal graph: poisoned document entered context → agent behavior shifted → credentials accessed → data left the building.
+
+## Chain of custody, everywhere
+
+Forensic output is only useful if it holds up. Every stage — acquisition, verification, analysis, reporting, export, transfer — is written to a tamper-evident, hash-chained ledger attributed to a case officer, with tool version and timestamps. Reports and manifests are cryptographically bound to the exact evidence they were built from.
+
+## Try it / contribute
+
+- **PyPI:** `pip install agentdfir`
+- **Repo:** https://github.com/piyush295/agenttrace
+- Apache-2.0, offline, dependency-free.
+
+I'd genuinely value feedback from anyone doing incident response on agentic systems — especially on the detection heuristics and which additional evidence sources are worth supporting next.
+
+**Authorized, defensive use only.** AgentTrace analyzes evidence you are authorized to investigate; it is not an attack or surveillance tool.
+============================ END COPY ============================
