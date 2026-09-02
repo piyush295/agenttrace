@@ -91,9 +91,31 @@ Requires Python ≥ 3.10. No third-party runtime dependencies.
 
 ### Install on Kali Linux / Debian / Ubuntu
 
-Modern Kali/Debian/Ubuntu ship a PEP 668 "externally managed" Python, so the
-recommended way to install a Python CLI tool is **pipx** (installs into an
-isolated venv and puts `agenttrace` on your PATH):
+**Option A — apt (GPG-signed repository):**
+
+```bash
+# 1. add the signing key
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://rakshanex.github.io/apt/agenttrace-archive-keyring.asc \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/agenttrace.gpg
+
+# 2. add the repository (signature-verified, no trusted=yes)
+echo "deb [signed-by=/etc/apt/keyrings/agenttrace.gpg] https://rakshanex.github.io/apt ./" \
+  | sudo tee /etc/apt/sources.list.d/agenttrace.list
+
+# 3. install
+sudo apt update
+sudo apt install agentdfir
+agenttrace --version
+```
+
+Every update is verified against the maintainer's GPG public key, so only the key
+holder can publish valid packages.
+
+**Option B — pipx (no repo needed):**
+
+Modern Kali/Debian/Ubuntu ship a PEP 668 "externally managed" Python, so use
+**pipx** to install a Python CLI tool cleanly:
 
 ```bash
 sudo apt update && sudo apt install -y pipx
@@ -101,11 +123,10 @@ pipx ensurepath
 pipx install agentdfir      # provides the `agenttrace` command
 ```
 
-Then just run `agenttrace --help`. To upgrade later: `pipx upgrade agentdfir`.
+Upgrade later with `pipx upgrade agentdfir`.
 
-> Prefer a system `.deb` / `apt install`? See **[PACKAGING-DEBIAN.md](PACKAGING-DEBIAN.md)**
-> for building a Debian package and hosting an apt repo. Official inclusion in the
-> Kali/Debian archives is a separate maintainer-review process (also documented there).
+> Building/hosting the signed apt repo yourself? See
+> **[PACKAGING-DEBIAN.md](PACKAGING-DEBIAN.md)**.
 
 ## Quickstart
 

@@ -1,5 +1,9 @@
 # Debian / Kali packaging guide
 
+> **Live signed repo:** https://rakshanex.github.io/apt/ — users can
+> `apt install agentdfir` from it today (see README > Install). This guide
+> explains how it is built, signed, and hosted.
+
 This document explains how to build a `.deb` for AgentTrace, install it, host a
 personal `apt` repository, and (optionally) pursue official inclusion in the
 Kali / Debian archives.
