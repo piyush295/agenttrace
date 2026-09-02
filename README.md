@@ -114,16 +114,122 @@ dependencies. Any future AI assistance would be confined to an optional
 natural-language *summary* layer on top of the deterministic core, and would
 never decide a detection.
 
-Other subcommands:
+Other subcommands are documented in the **User Guide** below.
+
+## User Guide
+
+AgentTrace is used as a sequence of commands over your evidence files. A typical
+investigation is: **detect → verify → report**, optionally **export** for
+hand-off. Every command is offline and reads evidence you provide as file paths.
+
+> The installed command is `agenttrace` (PyPI package `agentdfir`). You can also
+> run it as `python3 -m agenttrace.cli` without installing.
+
+### 0. Prepare evidence
+
+Point AgentTrace at logs you are authorized to investigate. Supported formats are
+listed in *Supported evidence sources* below. To try it with no real data, generate
+a synthetic incident:
 
 ```bash
-agenttrace ingest      <files...>   # normalize evidence to UFE (JSON)
-agenttrace verify      <files...>   # integrity + chain of custody + manifest
-agenttrace reconstruct <files...>   # timeline + causal graph
-agenttrace detect      <files...>   # attack-pattern findings
+python3 -m tests.synthetic synthetic_data     # creates sample evidence files
 ```
 
-Force a specific collector with `--collector otel_genai|halo_record|jsonl_llm`.
+### 1. `detect` — “what happened? any attack patterns?”
+
+```bash
+agenttrace detect <evidence files...>
+```
+Ingests the evidence, reconstructs the causal chain, and prints detected attack
+patterns (each mapped to MITRE ATLAS and linked to the exact evidence events).
+
+Example:
+```bash
+agenttrace detect synthetic_data/*.json synthetic_data/*.jsonl
+```
+
+### 2. `verify` — “is the evidence trustworthy? was it altered or is any missing?”
+
+```bash
+agenttrace verify <evidence files...> --signing-key "<your-case-key>" \
+    --case-number "IR-2026-0042" --case-officer "A. Analyst"
+```
+Runs hash-chain verification, sequence/time-gap detection, and produces an
+HMAC-signed manifest. Records a chain-of-custody entry attributed to the officer.
+
+### 3. `report` — produce a shareable report
+
+```bash
+agenttrace report <evidence files...> \
+    --title "Assistant Data Exfiltration - IR-2026-0042" \
+    --signing-key "<your-case-key>" \
+    --json-out report.json --md-out report.md --html-out report.html
+```
+Generates JSON, Markdown, and a self-contained offline **HTML** report (with an
+SVG causal graph, kill-chain narrative, risk score, and EU AI Act Article 12
+coverage). Open `report.html` in any browser — no internet needed.
+
+### 4. `export` / `verify-bundle` — portable, signed case bundles
+
+```bash
+# package the whole case into a signed .tar for air-gapped transfer
+agenttrace export <evidence files...> --out case.tar --signing-key "<key>"
+
+# on another machine, verify integrity + custody of the bundle
+agenttrace verify-bundle case.tar --signing-key "<key>"
+```
+
+### 5. `custody` — view/verify the chain-of-custody ledger
+
+```bash
+agenttrace custody case.tar
+```
+Prints and verifies the tamper-evident custody ledger inside a bundle (who did
+what, when, with which tool version and evidence hashes).
+
+### Inspection commands
+
+```bash
+agenttrace ingest       <files...>   # show normalized events (UFE) as JSON
+agenttrace reconstruct  <files...>   # show the timeline + causal graph
+```
+
+### Common options
+
+| Option | Applies to | Meaning |
+|--------|-----------|---------|
+| `--signing-key <str>` | verify, report, export, verify-bundle | HMAC key that seals/verifies the manifest and bundle |
+| `--case-number <str>` | all | case number recorded in the custody ledger |
+| `--case-officer <str>` | all | investigator name recorded in the custody ledger |
+| `--collector <name>` | all | force a collector instead of auto-detecting |
+| `--json-out / --md-out / --html-out <path>` | report | write the report to files (otherwise prints Markdown) |
+| `--title <str>` | report, export | human-readable case title on the report |
+| `--out <path>` | export | output `.tar` path for the portable bundle |
+
+### End-to-end example
+
+```bash
+# 1. generate a demo incident
+python3 -m tests.synthetic synthetic_data
+
+# 2. detect
+agenttrace detect synthetic_data/*.json synthetic_data/*.jsonl
+
+# 3. full report (JSON + Markdown + offline HTML)
+agenttrace report synthetic_data/*.json synthetic_data/*.jsonl \
+    --title "Synthetic AI Agent Incident" \
+    --signing-key "case-2026-001" \
+    --case-officer "A. Analyst" --case-number "IR-2026-001" \
+    --json-out report.json --md-out report.md --html-out report.html
+
+# 4. package a signed, portable case bundle and verify it
+agenttrace export synthetic_data/*.json synthetic_data/*.jsonl \
+    --out case.tar --signing-key "case-2026-001"
+agenttrace verify-bundle case.tar --signing-key "case-2026-001"
+agenttrace custody case.tar
+```
+
+Force a specific collector with `--collector otel_genai|halo_record|mcp|vector_store|oauth|egress|jsonl_llm`.
 
 ## Supported evidence sources
 
