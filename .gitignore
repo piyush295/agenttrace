@@ -22,3 +22,9 @@ r.json
 .DS_Store
 .idea/
 .vscode/
+
+# Debian build artifacts
+apt-repo/
+*.deb
+*.buildinfo
+*.changes

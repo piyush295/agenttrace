@@ -19,7 +19,76 @@ debian/
   source/format  # 3.0 (quilt)
 ```
 
-## 1. Install build tooling (on Debian/Kali/Ubuntu)
+---
+
+## ✅ Verified quick build (no debhelper / no sudo to build)
+
+This is the exact, tested path used to validate the package on Ubuntu 24.04 with
+only `fakeroot` + `dpkg-deb` (present by default). It produces a real `.deb`
+without needing `debhelper`/`dh-python` or root to *build* (root is only needed to
+*install*, like any package). A prebuilt repo already lives in `apt-repo/`.
+
+```bash
+cd <project root>
+STAGE=/tmp/agentdfir_0.1.0-1_all
+PYSITE="$STAGE/usr/lib/python3/dist-packages"
+mkdir -p "$PYSITE" "$STAGE/usr/bin" "$STAGE/DEBIAN"
+
+cp -r agenttrace "$PYSITE/"
+find "$PYSITE" -name __pycache__ -type d -prune -exec rm -rf {} +
+
+cat > "$STAGE/usr/bin/agenttrace" <<'EOF'
+#!/usr/bin/python3
+import sys
+from agenttrace.cli import main
+if __name__ == "__main__":
+    sys.exit(main())
+EOF
+chmod 755 "$STAGE/usr/bin/agenttrace"
+
+cat > "$STAGE/DEBIAN/control" <<'EOF'
+Package: agentdfir
+Version: 0.1.0-1
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.10)
+Maintainer: Piyush Kumar <piyush@example.invalid>
+Homepage: https://github.com/rakshanex/agenttrace
+Description: Forensic reconstruction for AI-agent security incidents (DFIR)
+ Provides the "agenttrace" command. Defensive, authorized use only.
+EOF
+
+fakeroot dpkg-deb --build --root-owner-group "$STAGE"
+# -> /tmp/agentdfir_0.1.0-1_all.deb
+```
+
+**Install the .deb (needs root, like any package):**
+```bash
+sudo apt install /tmp/agentdfir_0.1.0-1_all.deb
+agenttrace --version        # -> agenttrace 0.1.0
+```
+
+## ✅ Verified local apt repository
+
+A ready-made flat repo is generated at `apt-repo/` (`.deb` + `Packages` +
+`Packages.gz` + `Release`). Install FROM it with apt:
+
+```bash
+echo "deb [trusted=yes] file:///media/hdd/projects/agenttrace/apt-repo ./" \
+    | sudo tee /etc/apt/sources.list.d/agenttrace-local.list
+sudo apt update
+sudo apt install agentdfir
+agenttrace --version
+```
+
+For a **hosted** apt repo, upload the same `apt-repo/` directory to any static
+host (e.g. GitHub Pages) and replace the `file://` path with the URL. For anything
+public, sign the `Release` with GPG and drop `[trusted=yes]`.
+
+---
+
+## Standard route (debhelper) — for official-style packaging
 
 ```bash
 sudo apt update
