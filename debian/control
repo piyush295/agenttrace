@@ -1,7 +1,7 @@
 Source: agentdfir
 Section: utils
 Priority: optional
-Maintainer: Piyush Kumar <piyush@example.invalid>
+Maintainer: Piyush Kumar <mr.piyush295@gmail.com>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,

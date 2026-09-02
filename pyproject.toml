@@ -9,7 +9,7 @@ description = "Forensic reconstruction for AI agent security incidents (local-fi
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "AgentTrace contributors" }]
+authors = [{ name = "Piyush Kumar", email = "mr.piyush295@gmail.com" }]
 keywords = [
     "forensics", "dfir", "incident-response", "ai-agents", "llm",
     "opentelemetry", "mitre-atlas", "chain-of-custody", "security",

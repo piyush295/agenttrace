@@ -54,7 +54,7 @@ Section: utils
 Priority: optional
 Architecture: all
 Depends: python3 (>= 3.10)
-Maintainer: Piyush Kumar <piyush@example.invalid>
+Maintainer: Piyush Kumar <mr.piyush295@gmail.com>
 Homepage: https://github.com/rakshanex/agenttrace
 Description: Forensic reconstruction for AI-agent security incidents (DFIR)
  Provides the "agenttrace" command. Defensive, authorized use only.
