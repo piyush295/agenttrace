@@ -1,0 +1,25 @@
+Source: agentdfir
+Section: utils
+Priority: optional
+Maintainer: Piyush Kumar <piyush@example.invalid>
+Build-Depends: debhelper-compat (= 13),
+               dh-python,
+               python3-all,
+               python3-setuptools
+Standards-Version: 4.6.2
+Homepage: https://github.com/rakshanex/agenttrace
+Rules-Requires-Root: no
+X-Python3-Version: >= 3.10
+
+Package: agentdfir
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}
+Description: Forensic reconstruction for AI-agent security incidents (DFIR)
+ AgentTrace is a local-first, zero-dependency digital forensics and incident
+ response (DFIR) tool for AI agents and LLM applications. It ingests recorded
+ evidence (OpenTelemetry GenAI spans, MCP logs, vector-store retrieval logs,
+ OAuth records, egress logs, hash-chained audit logs), verifies integrity and
+ chain of custody, reconstructs the causal attack chain, detects attack patterns
+ mapped to MITRE ATLAS, and produces regulator/court-ready reports.
+ .
+ It installs the "agenttrace" command-line tool. Defensive, authorized use only.

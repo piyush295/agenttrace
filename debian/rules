@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+# debian/rules for agentdfir — uses dh + pybuild against pyproject.toml.
+
+export PYBUILD_NAME=agentdfir
+
+%:
+	dh $@ --with python3 --buildsystem=pybuild

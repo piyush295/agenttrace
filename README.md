@@ -89,6 +89,24 @@ python3 -m agenttrace.cli --help
 
 Requires Python ≥ 3.10. No third-party runtime dependencies.
 
+### Install on Kali Linux / Debian / Ubuntu
+
+Modern Kali/Debian/Ubuntu ship a PEP 668 "externally managed" Python, so the
+recommended way to install a Python CLI tool is **pipx** (installs into an
+isolated venv and puts `agenttrace` on your PATH):
+
+```bash
+sudo apt update && sudo apt install -y pipx
+pipx ensurepath
+pipx install agentdfir      # provides the `agenttrace` command
+```
+
+Then just run `agenttrace --help`. To upgrade later: `pipx upgrade agentdfir`.
+
+> Prefer a system `.deb` / `apt install`? See **[PACKAGING-DEBIAN.md](PACKAGING-DEBIAN.md)**
+> for building a Debian package and hosting an apt repo. Official inclusion in the
+> Kali/Debian archives is a separate maintainer-review process (also documented there).
+
 ## Quickstart
 
 Generate a synthetic incident dataset and run the full pipeline:
