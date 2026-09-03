@@ -8,6 +8,9 @@ Build-Depends: debhelper-compat (= 13),
                python3-setuptools
 Standards-Version: 4.6.2
 Homepage: https://github.com/rakshanex/agenttrace
+Vcs-Browser: https://github.com/rakshanex/agenttrace
+Vcs-Git: https://github.com/rakshanex/agenttrace.git
+Testsuite: autopkgtest-pkg-python
 Rules-Requires-Root: no
 X-Python3-Version: >= 3.10
 

@@ -1,0 +1,66 @@
+.TH AGENTTRACE 1 "2026-09-03" "agentdfir 0.1.0" "User Commands"
+.SH NAME
+agenttrace \- forensic reconstruction for AI-agent security incidents
+.SH SYNOPSIS
+.B agenttrace
+.I COMMAND
+[\fIOPTIONS\fR] [\fIEVIDENCE_FILES\fR...]
+.SH DESCRIPTION
+.B agenttrace
+is a local-first digital forensics and incident response (DFIR) tool for AI
+agents and LLM applications. It ingests already-recorded evidence, verifies
+integrity and chain of custody, reconstructs the causal attack chain, detects
+attack patterns mapped to MITRE ATLAS, and produces reports (JSON, Markdown,
+offline HTML). It is deterministic and runs fully offline.
+.PP
+Use only on evidence you are authorized to investigate. It is a defensive tool
+and has no capability to attack or access remote systems.
+.SH COMMANDS
+.TP
+.B ingest
+Normalize evidence into unified forensic events (JSON).
+.TP
+.B verify
+Verify integrity and chain of custody; produce a signed manifest.
+.TP
+.B reconstruct
+Build the timeline and causal graph.
+.TP
+.B detect
+Detect attack patterns (mapped to MITRE ATLAS).
+.TP
+.B report
+Produce a JSON / Markdown / self-contained HTML report.
+.TP
+.B export
+Write a portable, signed .tar case bundle.
+.TP
+.B verify\-bundle
+Verify a portable case bundle's integrity and signature.
+.TP
+.B custody
+Print and verify a bundle's chain-of-custody ledger.
+.SH OPTIONS
+.TP
+.B \-\-signing\-key \fISTR\fR
+HMAC key used to seal/verify the manifest and bundles.
+.TP
+.B \-\-case\-number \fISTR\fR, \-\-case\-officer \fISTR\fR
+Case metadata recorded in the chain-of-custody ledger.
+.TP
+.B \-\-collector \fINAME\fR
+Force a specific evidence collector instead of auto-detection.
+.TP
+.B \-\-json\-out / \-\-md\-out / \-\-html\-out \fIPATH\fR
+Write the report to files (report command).
+.SH EXAMPLES
+.TP
+Detect attack patterns in a set of logs:
+.B agenttrace detect logs/*.json logs/*.jsonl
+.TP
+Produce a full signed report:
+.B agenttrace report logs/*.json \-\-signing\-key KEY \-\-html\-out report.html
+.SH SEE ALSO
+Project documentation: https://github.com/rakshanex/agenttrace
+.SH AUTHOR
+Piyush Kumar <mr.piyush295@gmail.com>
